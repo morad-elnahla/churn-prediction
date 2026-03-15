@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  churn-api:
+    build: .
+    container_name: churn-prediction-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models   # mount so you can update the model without rebuilding
+    environment:
+      - MODEL_PATH=models/churn_pipeline.pkl
+    restart: unless-stopped

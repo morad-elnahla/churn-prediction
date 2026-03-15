@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChurnGuard — Customer Churn Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Variables ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0c10;
+      --surface:   #111318;
+      --surface2:  #181c24;
+      --border:    rgba(255,255,255,0.07);
+      --accent:    #e8ff47;
+      --accent2:   #47c8ff;
+      --danger:    #ff4d6d;
+      --safe:      #3de8a0;
+      --text:      #f0f2f5;
+      --muted:     #6b7280;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius:    14px;
+      --radius-sm: 8px;
+      --glow-accent: 0 0 40px rgba(232,255,71,0.12);
+      --glow-danger: 0 0 40px rgba(255,77,109,0.15);
+      --glow-safe:   0 0 40px rgba(61,232,160,0.15);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise texture overlay ─────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+
+    /* ── Grid background ───────────────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Nav ───────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 40px;
+      background: rgba(10,12,16,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-head);
+      font-size: 1.1rem; font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    .nav-badge {
+      font-size: 11px; font-weight: 500;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 20px;
+    }
+
+    /* ── Hero ──────────────────────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      padding: 160px 40px 80px;
+      text-align: center;
+      max-width: 760px; margin: 0 auto;
+    }
+
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent);
+      border: 1px solid rgba(232,255,71,0.25);
+      padding: 6px 14px; border-radius: 20px;
+      margin-bottom: 32px;
+      background: rgba(232,255,71,0.05);
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+      position: relative;
+    }
+
+    .hero p {
+      font-size: 1.05rem; color: var(--muted); font-weight: 300;
+      max-width: 520px; margin: 0 auto 40px;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-stats {
+      display: flex; justify-content: center; gap: 40px;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .stat { text-align: center; }
+    .stat-val {
+      font-family: var(--font-head); font-size: 1.8rem; font-weight: 800;
+      color: var(--accent); letter-spacing: -0.03em;
+      display: block;
+    }
+    .stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* ── Main layout ───────────────────────────────────────────────── */
+    .main {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 40px 100px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ── Card ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(232,255,71,0.3), transparent);
+    }
+
+    .card-title {
+      font-family: var(--font-head);
+      font-size: 0.85rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 24px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ── Form sections ─────────────────────────────────────────────── */
+    .section-label {
+      font-family: var(--font-head);
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); margin: 24px 0 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-label:first-child { margin-top: 0; }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(232,255,71,0.2), transparent);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-grid.cols-1 { grid-template-columns: 1fr; }
+
+    /* ── Fields ────────────────────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    label {
+      font-size: 11.5px; font-weight: 500;
+      color: var(--muted); letter-spacing: 0.04em;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px; padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    select option { background: #1a1e27; }
+
+    input[type="number"]:focus,
+    select:focus {
+      border-color: rgba(232,255,71,0.4);
+      box-shadow: 0 0 0 3px rgba(232,255,71,0.06);
+    }
+
+    input[type="number"]:hover,
+    select:hover {
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    /* Remove number input arrows */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* ── Submit button ─────────────────────────────────────────────── */
+    .btn-predict {
+      width: 100%; margin-top: 24px;
+      background: var(--accent);
+      color: #0a0c10;
+      font-family: var(--font-head);
+      font-size: 0.95rem; font-weight: 700;
+      letter-spacing: 0.03em;
+      border: none; border-radius: var(--radius-sm);
+      padding: 14px 24px; cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+
+    .btn-predict:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(232,255,71,0.25);
+    }
+    .btn-predict:active { transform: translateY(0); }
+
+    .btn-predict .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-predict.loading .btn-text { display: none; }
+    .btn-predict.loading .spinner  { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result panel ──────────────────────────────────────────────── */
+    .result-panel {
+      position: sticky; top: 100px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* ── Verdict card ──────────────────────────────────────────────── */
+    .verdict-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      text-align: center;
+      position: relative; overflow: hidden;
+      transition: border-color 0.5s, box-shadow 0.5s;
+      min-height: 260px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+
+    .verdict-card.churn {
+      border-color: rgba(255,77,109,0.3);
+      box-shadow: var(--glow-danger);
+    }
+    .verdict-card.safe {
+      border-color: rgba(61,232,160,0.3);
+      box-shadow: var(--glow-safe);
+    }
+
+    .verdict-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      transition: background 0.5s;
+    }
+    .verdict-card.churn::before {
+      background: linear-gradient(90deg, transparent, rgba(255,77,109,0.6), transparent);
+    }
+    .verdict-card.safe::before {
+      background: linear-gradient(90deg, transparent, rgba(61,232,160,0.6), transparent);
+    }
+
+    .verdict-idle {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+
+    .verdict-idle .idle-icon {
+      width: 56px; height: 56px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    .verdict-idle p {
+      color: var(--muted); font-size: 13px; max-width: 200px;
+    }
+
+    .verdict-result { display: none; width: 100%; }
+
+    .verdict-icon {
+      font-size: 3rem; margin-bottom: 12px;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+
+    .verdict-label {
+      font-family: var(--font-head);
+      font-size: 1.6rem; font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .verdict-card.churn .verdict-label { color: var(--danger); }
+    .verdict-card.safe  .verdict-label { color: var(--safe); }
+
+    .verdict-sub {
+      font-size: 13px; color: var(--muted);
+      animation: fadeUp 0.4s 0.15s ease both;
+    }
+
+    /* ── Probability gauge ─────────────────────────────────────────── */
+    .gauge-wrap {
+      margin: 20px 0 8px;
+      animation: fadeUp 0.4s 0.2s ease both;
+    }
+
+    .gauge-track {
+      height: 6px; background: var(--surface2);
+      border-radius: 99px; overflow: hidden;
+      position: relative;
+    }
+
+    .gauge-fill {
+      height: 100%; border-radius: 99px;
+      transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+      width: 0%;
+    }
+    .verdict-card.churn .gauge-fill { background: linear-gradient(90deg, #ff4d6d, #ff8fa3); }
+    .verdict-card.safe  .gauge-fill { background: linear-gradient(90deg, #3de8a0, #7ff0c4); }
+
+    .gauge-labels {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .prob-value {
+      font-family: var(--font-head);
+      font-size: 2.4rem; font-weight: 800;
+      letter-spacing: -0.04em;
+      margin: 4px 0;
+    }
+    .verdict-card.churn .prob-value { color: var(--danger); }
+    .verdict-card.safe  .prob-value { color: var(--safe); }
+
+    /* ── Metrics card ──────────────────────────────────────────────── */
+    .metrics-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .metric-val {
+      font-family: var(--font-head);
+      font-size: 1.2rem; font-weight: 700;
+      color: var(--accent);
+      display: block;
+    }
+
+    .metric-lbl {
+      font-size: 10.5px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+
+    /* ── Risk factors ──────────────────────────────────────────────── */
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      display: none;
+    }
+
+    .risk-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .risk-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .risk-item .ri-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .risk-item.high .ri-dot  { background: var(--danger); }
+    .risk-item.med .ri-dot   { background: #fbbf24; }
+    .risk-item.low .ri-dot   { background: var(--safe); }
+
+    /* ── Model info card ───────────────────────────────────────────── */
+    .model-info {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+
+    .info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .lbl { color: var(--muted); }
+    .info-row .val {
+      font-weight: 500; color: var(--text);
+      font-family: var(--font-head); font-size: 12px;
+    }
+    .info-row .val.accent { color: var(--accent); }
+
+    /* ── Error toast ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #2a1820; border: 1px solid rgba(255,77,109,0.3);
+      color: #ff8fa3; border-radius: var(--radius-sm);
+      padding: 12px 20px; font-size: 13px;
+      z-index: 999; opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      max-width: 380px; text-align: center;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Animations ────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-in { animation: fadeUp 0.5s ease both; }
+
+    /* ── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+      .result-panel { position: static; }
+      nav { padding: 14px 20px; }
+      .hero { padding: 130px 20px 60px; }
+      .main { padding: 0 20px 80px; }
+      .form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 500px) {
+      .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+      .hero-stats { gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-logo">
+      <div class="dot"></div>
+      ChurnGuard
+    </div>
+    <span class="nav-badge">Gradient Boosting · ROC-AUC 0.84</span>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-tag">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      ML-Powered Churn Intelligence
+    </div>
+    <h1>Predict who's about to <span>leave</span> — before they do</h1>
+    <p>Fill in customer data and get an instant churn risk score powered by a trained Gradient Boosting model.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-val">84%</span><span class="stat-lbl">ROC-AUC</span></div>
+      <div class="stat"><span class="stat-val">67%</span><span class="stat-lbl">Recall</span></div>
+      <div class="stat"><span class="stat-val">7K+</span><span class="stat-lbl">Training Rows</span></div>
+    </div>
+  </section>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── Form ── -->
+    <div class="card animate-in">
+      <div class="card-title">Customer Profile</div>
+
+      <form id="churnForm">
+
+        <!-- Demographics -->
+        <div class="section-label">Demographics</div>
+        <div class="form-grid cols-3">
+          <div class="field">
+            <label>Gender</label>
+            <select name="gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Senior Citizen</label>
+            <select name="seniorcitizen">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Partner</label>
+            <select name="partner">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-top:12px">
+          <div class="field">
+            <label>Dependents</label>
+            <select name="dependents">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tenure (months)</label>
+            <input type="number" name="tenure" value="12" min="0" max="72"/>
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div class="section-label">Services</div>
+        <div class="form-grid cols-3">
+          <div class="field">
+            <label>Phone Service</label>
+            <select name="phoneservice">
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Multiple Lines</label>
+            <select name="multiplelines">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No phone service">No Phone</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Internet Service</label>
+            <select name="internetservice">
+              <option value="Fiber optic">Fiber Optic</option>
+              <option value="DSL">DSL</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Online Security</label>
+            <select name="onlinesecurity">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No internet service">No Internet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Online Backup</label>
+            <select name="onlinebackup">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No internet service">No Internet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Device Protection</label>
+            <select name="deviceprotection">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No internet service">No Internet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tech Support</label>
+            <select name="techsupport">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No internet service">No Internet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Streaming TV</label>
+            <select name="streamingtv">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No internet service">No Internet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Streaming Movies</label>
+            <select name="streamingmovies">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+              <option value="No internet service">No Internet</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Account -->
+        <div class="section-label">Account & Billing</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Contract Type</label>
+            <select name="contract">
+              <option value="Month-to-month">Month-to-month</option>
+              <option value="One year">One Year</option>
+              <option value="Two year">Two Year</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Paperless Billing</label>
+            <select name="paperlessbilling">
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Payment Method</label>
+            <select name="paymentmethod" style="grid-column: span 2">
+              <option value="Electronic check">Electronic Check</option>
+              <option value="Mailed check">Mailed Check</option>
+              <option value="Bank transfer (automatic)">Bank Transfer</option>
+              <option value="Credit card (automatic)">Credit Card</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Charges -->
+        <div class="section-label">Charges</div>
+        <div class="form-grid cols-3">
+          <div class="field">
+            <label>Monthly Charges ($)</label>
+            <input type="number" name="monthlycharges" value="65.00" min="0" step="0.01"/>
+          </div>
+          <div class="field">
+            <label>Total Charges ($)</label>
+            <input type="number" name="totalcharges" value="780.00" min="0" step="0.01"/>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-predict" id="predictBtn">
+          <span class="btn-text">Run Prediction</span>
+          <div class="spinner"></div>
+        </button>
+
+      </form>
+    </div>
+
+    <!-- ── Result panel ── -->
+    <div class="result-panel">
+
+      <!-- Verdict -->
+      <div class="verdict-card" id="verdictCard">
+        <div class="verdict-idle" id="verdictIdle">
+          <div class="idle-icon">⚡</div>
+          <p>Fill in the customer profile and run a prediction</p>
+        </div>
+        <div class="verdict-result" id="verdictResult">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div class="verdict-label" id="verdictLabel"></div>
+          <div class="verdict-sub" id="verdictSub"></div>
+          <div class="gauge-wrap" style="width:100%">
+            <div class="prob-value" id="probValue"></div>
+            <div class="gauge-track">
+              <div class="gauge-fill" id="gaugeFill"></div>
+            </div>
+            <div class="gauge-labels"><span>0%</span><span>Churn Probability</span><span>100%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk factors -->
+      <div class="risk-card" id="riskCard">
+        <div class="card-title">Risk Factors</div>
+        <div class="risk-list" id="riskList"></div>
+      </div>
+
+      <!-- Model info -->
+      <div class="model-info">
+        <div class="card-title">Model Info</div>
+        <div class="info-row">
+          <span class="lbl">Algorithm</span>
+          <span class="val accent">Gradient Boosting</span>
+        </div>
+        <div class="info-row">
+          <span class="lbl">Estimators</span>
+          <span class="val">300</span>
+        </div>
+        <div class="info-row">
+          <span class="lbl">ROC-AUC</span>
+          <span class="val accent">0.836</span>
+        </div>
+        <div class="info-row">
+          <span class="lbl">F1-Score</span>
+          <span class="val">0.609</span>
+        </div>
+        <div class="info-row">
+          <span class="lbl">Threshold</span>
+          <span class="val" id="thresholdVal">—</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const form       = document.getElementById('churnForm');
+    const btn        = document.getElementById('predictBtn');
+    const verdict    = document.getElementById('verdictCard');
+    const idle       = document.getElementById('verdictIdle');
+    const result     = document.getElementById('verdictResult');
+    const icon       = document.getElementById('verdictIcon');
+    const lbl        = document.getElementById('verdictLabel');
+    const sub        = document.getElementById('verdictSub');
+    const probVal    = document.getElementById('probValue');
+    const gauge      = document.getElementById('gaugeFill');
+    const riskCard   = document.getElementById('riskCard');
+    const riskList   = document.getElementById('riskList');
+    const threshEl   = document.getElementById('thresholdVal');
+    const toast      = document.getElementById('toast');
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    function getRiskFactors(data, prob) {
+      const risks = [];
+      if (data.contract === 'Month-to-month')
+        risks.push({ level: 'high', text: 'Month-to-month contract — highest churn risk' });
+      if (data.internetservice === 'Fiber optic' && data.onlinesecurity === 'No')
+        risks.push({ level: 'high', text: 'Fiber optic with no online security' });
+      if (data.paymentmethod === 'Electronic check')
+        risks.push({ level: 'med', text: 'Electronic check payment method' });
+      if (parseInt(data.tenure) < 12)
+        risks.push({ level: 'high', text: `Short tenure (${data.tenure} months) — early churn window` });
+      if (data.techsupport === 'No' && data.internetservice !== 'No')
+        risks.push({ level: 'med', text: 'No tech support subscription' });
+      if (parseFloat(data.monthlycharges) > 80)
+        risks.push({ level: 'med', text: `High monthly charges ($${data.monthlycharges})` });
+      if (data.paperlessbilling === 'Yes')
+        risks.push({ level: 'low', text: 'Paperless billing — slightly elevated risk' });
+      if (data.contract === 'Two year')
+        risks.push({ level: 'low', text: 'Two-year contract — strong retention signal' });
+      if (data.onlinesecurity === 'Yes')
+        risks.push({ level: 'low', text: 'Online security active — positive retention factor' });
+      return risks.slice(0, 5);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.classList.add('loading');
+
+      const fd   = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+
+      // Coerce numeric fields
+      data.tenure         = parseInt(data.tenure);
+      data.monthlycharges = parseFloat(data.monthlycharges);
+      data.totalcharges   = parseFloat(data.totalcharges);
+
+      try {
+        const res  = await fetch('/predict', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Prediction failed');
+        }
+
+        const json = await res.json();
+        const pct  = (json.churn_probability * 100).toFixed(1);
+        const isChurn = json.churn_prediction === 1;
+
+        // Update threshold display
+        threshEl.textContent = (json.threshold_used * 100).toFixed(0) + '%';
+
+        // Update verdict card
+        verdict.classList.remove('churn', 'safe');
+        verdict.classList.add(isChurn ? 'churn' : 'safe');
+        idle.style.display   = 'none';
+        result.style.display = 'flex';
+        result.style.flexDirection = 'column';
+        result.style.alignItems = 'center';
+
+        icon.textContent  = isChurn ? '⚠️' : '✅';
+        lbl.textContent   = isChurn ? 'High Churn Risk' : 'Low Churn Risk';
+        sub.textContent   = isChurn
+          ? 'This customer is likely to churn soon'
+          : 'This customer is likely to stay';
+
+        probVal.textContent = pct + '%';
+
+        // Animate gauge
+        gauge.style.width = '0%';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            gauge.style.width = pct + '%';
+          });
+        });
+
+        // Risk factors
+        const risks = getRiskFactors(data, json.churn_probability);
+        if (risks.length) {
+          riskCard.style.display = 'block';
+          riskList.innerHTML = risks.map((r, i) => `
+            <div class="risk-item ${r.level}" style="animation-delay:${i * 0.06}s">
+              <div class="ri-dot"></div>
+              <span>${r.text}</span>
+            </div>
+          `).join('');
+        }
+
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      } finally {
+        btn.classList.remove('loading');
+      }
+    });
+  </script>
+</body>
+</html>
