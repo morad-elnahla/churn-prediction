@@ -1,90 +1,109 @@
-# Telco Customer Churn Prediction
+<div align="center">
 
-A production-ready ML project that predicts customer churn using Logistic Regression,
-served via a FastAPI REST API and containerised with Docker.
+<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=32&pause=1000&color=E8FF47&center=true&vCenter=true&width=600&lines=ChurnGuard+%E2%9A%A1;Customer+Churn+Intelligence;ML-Powered+%C2%B7+Production+Ready" alt="ChurnGuard" />
+
+<br/>
+
+![Python](https://img.shields.io/badge/Python-3.10-E8FF47?style=for-the-badge&logo=python&logoColor=black&labelColor=0a0c10)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.7.1-E8FF47?style=for-the-badge&logo=scikitlearn&logoColor=black&labelColor=0a0c10)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-E8FF47?style=for-the-badge&logo=fastapi&logoColor=black&labelColor=0a0c10)
+![Docker](https://img.shields.io/badge/Docker-Ready-E8FF47?style=for-the-badge&logo=docker&logoColor=black&labelColor=0a0c10)
+
+<br/>
+
+> **Predict who's about to leave — before they do.**  
+> A production-ready ML system that scores customer churn risk in real-time using Gradient Boosting.
+
+<br/>
+
+| 🎯 ROC-AUC | ⚡ F1-Score | 🔍 Recall | 📦 Training Rows |
+|:---:|:---:|:---:|:---:|
+| **0.836** | **0.609** | **66.8%** | **7,043** |
+
+</div>
 
 ---
 
-## Project Structure
+## ✦ What is this?
+
+**ChurnGuard** is an end-to-end machine learning project built on the [Telco Customer Churn dataset](https://www.kaggle.com/blastchar/telco-customer-churn).  
+It identifies customers likely to cancel their subscription, allowing businesses to take action before churn happens.
+
+The project covers the full ML lifecycle:
+- Exploratory Data Analysis
+- Feature Engineering & Preprocessing Pipeline
+- Multi-model comparison (LR, Random Forest, Gradient Boosting)
+- Threshold tuning for imbalanced classes
+- REST API deployment with a full web interface
+- Containerisation with Docker
+
+---
+
+## ✦ Project Structure
 
 ```
 churn-prediction/
-├── notebooks/
-│   └── churn_prediction.ipynb   ← Full EDA + training notebook
-├── app/
-│   └── main.py                  ← FastAPI service
-├── models/                      ← Trained model is saved here by the notebook
-├── data/
-│   └── Telco-Customer-Churn-data.csv   ← Put the dataset here
-├── requirements.txt
+│
+├── 📓 notebooks/
+│   └── churn_prediction.ipynb     ← Full EDA + training pipeline
+│
+├── 🚀 app/
+│   ├── main.py                    ← FastAPI service
+│   ├── templates/
+│   │   └── index.html             ← Web UI
+│   └── static/
+│
+├── 🧠 models/
+│   └── churn_pipeline.pkl         ← Trained model artifact
+│
+├── 📊 data/
+│   └── Telco-Customer-Churn-data.csv
+│
 ├── Dockerfile
 ├── docker-compose.yml
-└── README.md
+└── requirements.txt
 ```
 
 ---
 
-## Quick Start
+## ✦ Quick Start
 
-### Step 1 — Place the dataset
-
-```
-churn-prediction/data/Telco-Customer-Churn-data.csv
-```
-
-### Step 2 — Train the model (run the notebook)
+### Run locally
 
 ```bash
-cd churn-prediction
+# Install dependencies
 pip install -r requirements.txt
-jupyter notebook notebooks/churn_prediction.ipynb
+
+# Start the server
+uvicorn app.main:app --reload --port 8000
 ```
 
-Run all cells. This saves `models/churn_pipeline.pkl`.
+Open **http://localhost:8000** — the full web UI will be there.
 
-### Step 3 — Run the API locally (without Docker)
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Open: http://localhost:8000/docs
-
----
-
-## Docker
-
-### Build & run
+### Run with Docker
 
 ```bash
 docker compose up --build
 ```
 
-### Or with plain Docker
-
-```bash
-docker build -t churn-api .
-docker run -p 8000:8000 churn-api
-```
-
 ---
 
-## API Endpoints
+## ✦ API
 
-| Method | Path       | Description                   |
-|--------|------------|-------------------------------|
-| GET    | `/`        | Health check                  |
-| GET    | `/health`  | Health check                  |
-| POST   | `/predict` | Predict churn for a customer  |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Web UI |
+| `GET` | `/health` | Health check |
+| `POST` | `/predict` | Predict churn |
 
-### Example request
+### Example
 
 ```bash
 curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
   -d '{
     "gender": "Female",
-    "seniorcitizen": 0,
+    "seniorcitizen": "0",
     "partner": "No",
     "dependents": "No",
     "phoneservice": "Yes",
@@ -105,34 +124,55 @@ curl -X POST http://localhost:8000/predict \
   }'
 ```
 
-### Example response
-
 ```json
 {
-  "churn_probability": 0.7821,
+  "churn_probability": 0.6823,
   "churn_prediction": 1,
-  "churn_label": "CHURN"
+  "churn_label": "CHURN",
+  "threshold_used": 0.35
 }
 ```
 
 ---
 
-## Model Performance (Test Set)
+## ✦ Model Performance
 
-| Metric    | Score  |
-|-----------|--------|
-| Accuracy  | ~79%   |
-| Precision | ~61%   |
-| Recall    | ~55%   |
-| F1-Score  | ~58%   |
-| ROC-AUC   | ~84%   |
+```
+══════════════════════════════════════════════
+  Algorithm   : Gradient Boosting
+  Estimators  : 300 trees
+  Threshold   : 0.35 (tuned on validation set)
+══════════════════════════════════════════════
+  Accuracy    : 77.2%
+  Precision   : 55.9%
+  Recall      : 66.8%   ← catches 2 in 3 churners
+  F1-Score    : 60.9%
+  ROC-AUC     : 83.6%
+══════════════════════════════════════════════
+```
+
+> **Why tune the threshold?**  
+> The default 0.5 cutoff ignores class imbalance (only ~27% of customers churn).  
+> Lowering to 0.35 significantly improves Recall — catching more churners at the cost of slightly more false positives. In a business context, missing a churner is more costly than an unnecessary retention offer.
 
 ---
 
-## Tech Stack
+## ✦ Tech Stack
 
-- **Python 3.10**
-- **scikit-learn** — preprocessing pipeline + Logistic Regression
-- **pandas / numpy** — data handling
-- **FastAPI + Uvicorn** — REST API
-- **Docker / Docker Compose** — containerisation
+| Layer | Technology |
+|-------|-----------|
+| Language | Python 3.10 |
+| ML | scikit-learn — GradientBoostingClassifier |
+| Data | pandas, numpy |
+| API | FastAPI + Uvicorn |
+| UI | HTML / CSS / Vanilla JS |
+| Container | Docker + Docker Compose |
+| Dataset | [Kaggle — Telco Customer Churn](https://www.kaggle.com/blastchar/telco-customer-churn) |
+
+---
+
+<div align="center">
+
+Built by **Morad El-Nahla**
+
+</div>
