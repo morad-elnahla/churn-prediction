@@ -1,3 +1,13 @@
+---
+title: ChurnGuard
+emoji: 📉
+colorFrom: blue
+colorTo: yellow
+sdk: docker
+pinned: false
+short_description: ML-Powered Customer Churn Prediction
+---
+
 <div align="center">
 
 <img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=32&pause=1000&color=E8FF47&center=true&vCenter=true&width=600&lines=ChurnGuard+%E2%9A%A1;Customer+Churn+Intelligence;ML-Powered+%C2%B7+Production+Ready" alt="ChurnGuard" />
@@ -11,7 +21,7 @@
 
 <br/>
 
-> **Predict who's about to leave — before they do.**  
+> **Predict who's about to leave — before they do.**
 > A production-ready ML system that scores customer churn risk in real-time using Gradient Boosting.
 
 <br/>
@@ -20,13 +30,27 @@
 |:---:|:---:|:---:|:---:|
 | **0.836** | **0.609** | **66.8%** | **7,043** |
 
+<br/>
+
+**[🚀 Try the Live Demo](https://huggingface.co/spaces/morad-elna7la/churn-prediction)**
+
 </div>
+
+---
+
+## ✦ Screenshots
+
+![Hero](https://raw.githubusercontent.com/morad-elnahla/churn-prediction/main/images/Screenshot%202026-03-16%20020226.png)
+
+![Prediction](https://raw.githubusercontent.com/morad-elnahla/churn-prediction/main/images/Screenshot%202026-03-16%20020243.png)
+
+![Result](https://raw.githubusercontent.com/morad-elnahla/churn-prediction/main/images/Screenshot%202026-03-16%20020257.png)
 
 ---
 
 ## ✦ What is this?
 
-**ChurnGuard** is an end-to-end machine learning project built on the [Telco Customer Churn dataset](https://www.kaggle.com/blastchar/telco-customer-churn).  
+**ChurnGuard** is an end-to-end machine learning project built on the [Telco Customer Churn dataset](https://www.kaggle.com/blastchar/telco-customer-churn).
 It identifies customers likely to cancel their subscription, allowing businesses to take action before churn happens.
 
 The project covers the full ML lifecycle:
@@ -40,21 +64,20 @@ The project covers the full ML lifecycle:
 ---
 
 ## ✦ Project Structure
-
 ```
 churn-prediction/
 │
 ├── 📓 notebooks/
-│   └── churn_prediction.ipynb     ← Full EDA + training pipeline
+│   └── churn_prediction.ipynb
 │
 ├── 🚀 app/
-│   ├── main.py                    ← FastAPI service
+│   ├── main.py
 │   ├── templates/
-│   │   └── index.html             ← Web UI
+│   │   └── index.html
 │   └── static/
 │
 ├── 🧠 models/
-│   └── churn_pipeline.pkl         ← Trained model artifact
+│   └── churn_pipeline.pkl
 │
 ├── 📊 data/
 │   └── Telco-Customer-Churn-data.csv
@@ -67,63 +90,52 @@ churn-prediction/
 ---
 
 ## ✦ Quick Start
-
-### Run locally
-
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Start the server
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open **http://localhost:8000** — the full web UI will be there.
-
-### Run with Docker
-
+Or with Docker:
 ```bash
 docker compose up --build
 ```
 
 ---
 
-## ✦ API
+## ✦ API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/` | Web UI |
 | `GET` | `/health` | Health check |
-| `POST` | `/predict` | Predict churn |
+| `POST` | `/predict` | Predict churn probability |
 
-### Example
-
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "gender": "Female",
-    "seniorcitizen": "0",
-    "partner": "No",
-    "dependents": "No",
-    "phoneservice": "Yes",
-    "multiplelines": "No",
-    "internetservice": "Fiber optic",
-    "onlinesecurity": "No",
-    "onlinebackup": "No",
-    "deviceprotection": "No",
-    "techsupport": "No",
-    "streamingtv": "Yes",
-    "streamingmovies": "Yes",
-    "contract": "Month-to-month",
-    "paperlessbilling": "Yes",
-    "paymentmethod": "Electronic check",
-    "tenure": 5,
-    "monthlycharges": 90.0,
-    "totalcharges": 450.0
-  }'
+### Request
+```json
+{
+  "gender": "Female",
+  "seniorcitizen": "0",
+  "partner": "No",
+  "dependents": "No",
+  "phoneservice": "Yes",
+  "multiplelines": "No",
+  "internetservice": "Fiber optic",
+  "onlinesecurity": "No",
+  "onlinebackup": "No",
+  "deviceprotection": "No",
+  "techsupport": "No",
+  "streamingtv": "Yes",
+  "streamingmovies": "Yes",
+  "contract": "Month-to-month",
+  "paperlessbilling": "Yes",
+  "paymentmethod": "Electronic check",
+  "tenure": 5,
+  "monthlycharges": 90.0,
+  "totalcharges": 450.0
+}
 ```
 
+### Response
 ```json
 {
   "churn_probability": 0.6823,
@@ -137,23 +149,14 @@ curl -X POST http://localhost:8000/predict \
 
 ## ✦ Model Performance
 
-```
-══════════════════════════════════════════════
-  Algorithm   : Gradient Boosting
-  Estimators  : 300 trees
-  Threshold   : 0.35 (tuned on validation set)
-══════════════════════════════════════════════
-  Accuracy    : 77.2%
-  Precision   : 55.9%
-  Recall      : 66.8%   ← catches 2 in 3 churners
-  F1-Score    : 60.9%
-  ROC-AUC     : 83.6%
-══════════════════════════════════════════════
-```
-
-> **Why tune the threshold?**  
-> The default 0.5 cutoff ignores class imbalance (only ~27% of customers churn).  
-> Lowering to 0.35 significantly improves Recall — catching more churners at the cost of slightly more false positives. In a business context, missing a churner is more costly than an unnecessary retention offer.
+| Metric | Value | Notes |
+|--------|-------|-------|
+| ROC-AUC | **83.6%** | Strong discriminative power |
+| Accuracy | **77.2%** | Overall correctness |
+| Recall | **66.8%** | Catches 2 in 3 churners |
+| F1-Score | **60.9%** | Balanced precision/recall |
+| Precision | **55.9%** | Positive prediction accuracy |
+| Threshold | **0.35** | Tuned on validation set |
 
 ---
 
